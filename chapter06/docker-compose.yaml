@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka-kraft
+    ports:
+      - "9092:9092"   # 외부 접근용
+      - "29092:29092" # 내부 컨테이너 간 통신용
+    environment:
+      KAFKA_NODE_ID: 1
+      CLUSTER_ID: HsDBs9l6UUmQq7Y5E6bNlw
+      KAFKA_PROCESS_ROLES: broker,controller # 역할 정의
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093 # 컨트롤러 노드 목록
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093,INTERNAL://0.0.0.0:29092 # 카프카가 수신할 리스터 목록(클라이언트용, 내부용, 클라이언트용)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092 # 클라이언트가 접근할 때 사용하는 주소
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
