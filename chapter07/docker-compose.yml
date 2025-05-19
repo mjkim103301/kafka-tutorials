@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  peter-kafka01:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: peter-kafka01
+    hostname: peter-kafka01.foo.bar
+    ports:
+      - "9093:9092"  # 외부 접속용
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: "1"
+      CLUSTER_ID: "HsDBs9l6UUmQq7Y5E6bNlw"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@peter-kafka01.foo.bar:9093,2@peter-kafka02.foo.bar:9093,3@peter-kafka03.foo.bar:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://peter-kafka01.foo.bar:9092"
+      KAFKA_JMX_PORT: "9999"
+      KAFKA_JMX_HOSTNAME: "peter-kafka01.foo.bar"
+
+  peter-kafka02:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: peter-kafka02
+    hostname: peter-kafka02.foo.bar
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: "2"
+      CLUSTER_ID: "HsDBs9l6UUmQq7Y5E6bNlw"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@peter-kafka01.foo.bar:9093,2@peter-kafka02.foo.bar:9093,3@peter-kafka03.foo.bar:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://peter-kafka02.foo.bar:9092"
+      KAFKA_JMX_PORT: "9999"
+      KAFKA_JMX_HOSTNAME: "peter-kafka02.foo.bar"
+
+  peter-kafka03:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: peter-kafka03
+    hostname: peter-kafka03.foo.bar
+    ports:
+      - "9095:9092"
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: "3"
+      CLUSTER_ID: "HsDBs9l6UUmQq7Y5E6bNlw"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@peter-kafka01.foo.bar:9093,2@peter-kafka02.foo.bar:9093,3@peter-kafka03.foo.bar:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://peter-kafka03.foo.bar:9092"
+      KAFKA_JMX_PORT: "9999"
+      KAFKA_JMX_HOSTNAME: "peter-kafka03.foo.bar"
+
+  # JMX Exporters
+  jmx-peter-kafka01:
+    image: eclipse-temurin:17-jdk
+    container_name: jmx-peter-kafka01
+    hostname: peter-kafka01.foo.bar
+    command: >
+      java -jar /jmx/jmx_prometheus_httpserver.jar 7071 /jmx/config.yml
+    ports:
+      - "7071:7071"
+    volumes:
+      - ./jmx/jmx_prometheus_httpserver.yml:/jmx/config.yml:ro
+      - ./jmx/jmx_prometheus_httpserver-0.13.1-SNAPSHOT-jar-with-dependencies.jar:/jmx/jmx_prometheus_httpserver.jar:ro
+    depends_on:
+      - peter-kafka01
+
+  jmx-peter-kafka02:
+    image: eclipse-temurin:17-jdk
+    container_name: jmx-peter-kafka02
+    hostname: peter-kafka02.foo.bar
+    command: >
+      java -jar /jmx/jmx_prometheus_httpserver.jar 7071 /jmx/config.yml
+    ports:
+      - "7072:7071"
+    volumes:
+      - ./jmx/jmx_prometheus_httpserver.yml:/jmx/config.yml:ro
+      - ./jmx/jmx_prometheus_httpserver-0.13.1-SNAPSHOT-jar-with-dependencies.jar:/jmx/jmx_prometheus_httpserver.jar:ro
+    depends_on:
+      - peter-kafka02
+
+  jmx-peter-kafka03:
+    image: eclipse-temurin:17-jdk
+    container_name: jmx-peter-kafka03
+    hostname: peter-kafka03.foo.bar
+    command: >
+      java -jar /jmx/jmx_prometheus_httpserver.jar 7071 /jmx/config.yml
+    ports:
+      - "7073:7071"
+    volumes:
+      - ./jmx/jmx_prometheus_httpserver.yml:/jmx/config.yml:ro
+      - ./jmx/jmx_prometheus_httpserver-0.13.1-SNAPSHOT-jar-with-dependencies.jar:/jmx/jmx_prometheus_httpserver.jar:ro
+    depends_on:
+      - peter-kafka03
+
+  # Node Exporters
+  node-exporter1:
+    image: prom/node-exporter
+    container_name: node-exporter1
+    hostname: peter-kafka01.foo.bar
+    ports:
+      - "9100:9100"
+
+  node-exporter2:
+    image: prom/node-exporter
+    container_name: node-exporter2
+    hostname: peter-kafka02.foo.bar
+    ports:
+      - "9101:9100"
+
+  node-exporter3:
+    image: prom/node-exporter
+    container_name: node-exporter3
+    hostname: peter-kafka03.foo.bar
+    ports:
+      - "9102:9100"
+
+  # Kafka Exporters
+  kafka-exporter1:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter1
+    hostname: peter-kafka01.foo.bar
+    ports:
+      - "9308:9308"
+    command:
+      - "--kafka.server=peter-kafka01.foo.bar:9092"
+    depends_on:
+      - peter-kafka01
+
+  kafka-exporter2:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter2
+    hostname: peter-kafka02.foo.bar
+    ports:
+      - "9309:9308"
+    command:
+      - "--kafka.server=peter-kafka02.foo.bar:9092"
+    depends_on:
+      - peter-kafka02
+
+  kafka-exporter3:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter3
+    hostname: peter-kafka03.foo.bar
+    ports:
+      - "9310:9308"
+    command:
+      - "--kafka.server=peter-kafka03.foo.bar:9092"
+    depends_on:
+      - peter-kafka03
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus-chapter07
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana-chapter07
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
